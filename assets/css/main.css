@@ -3485,6 +3485,16 @@ input, select, textarea {
 
 		}
 
+	
+		.svg-sidebar {
+			width: 100px;
+			height: 100px;
+			background-image: url('images\Logo-Horizontal-RGB.svg');
+			background-size: contain;
+			background-repeat: no-repeat;
+		}
+	
+
 	#header + #wrapper > .wrapper > .inner {
 		margin: 0 auto;
 	}
