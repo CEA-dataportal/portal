@@ -3196,6 +3196,7 @@ input, select, textarea {
 
 	.wrapper {
 		position: relative;
+		padding: 5em 5em 3em 5em ;
 	}
 
 		.wrapper > .inner {
