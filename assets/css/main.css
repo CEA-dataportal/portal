@@ -1831,10 +1831,10 @@ input, select, textarea {
 		-webkit-transition: border-color 0.2s ease;
 		-ms-transition: border-color 0.2s ease;
 		transition: border-color 0.2s ease;
-		background-color: transparent;
+		background-color: #DF4747;
 		border: solid 1px !important;
 		border-color: rgba(255, 255, 255, 0.15) !important;
-		border-radius: 3em;
+		border-radius: 8px;
 		color: #ffffff !important;
 		cursor: pointer;
 		display: inline-block;
@@ -3240,7 +3240,7 @@ input, select, textarea {
 		}
 
 		.wrapper.style1 {
-			background-color: #372d5e;
+			background-color: #191919;
 		}
 
 		.wrapper.style1-alt {
@@ -3248,7 +3248,8 @@ input, select, textarea {
 		}
 
 		.wrapper.style2 {
-			background-color: #665b92;
+			background-color: #FFF;
+			color: #191919;
 		}
 
 		.wrapper.style2-alt {
@@ -3256,7 +3257,7 @@ input, select, textarea {
 		}
 
 		.wrapper.style3 {
-			background-color: #939393;
+			background-color: #F8F8F8;
 		}
 
 		.wrapper.style3-alt {
