@@ -3196,12 +3196,12 @@ input, select, textarea {
 
 	.wrapper {
 		position: relative;
+		padding: 5em 5em 3em 5em ;
 	}
 
 		.wrapper > .inner {
 			padding: 5em 5em 3em 5em ;
 			max-width: 100%;
-			width: 75em;
 		}
 
 			@media screen and (max-width: 1680px) {
