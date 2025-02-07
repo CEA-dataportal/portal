@@ -3199,6 +3199,10 @@ input, select, textarea {
 		padding: 5em 5em 3em 5em ;
 		color: #17284B;
 	}
+	.wrapper h1 {
+		padding: 5em 5em 3em 5em ;
+		color: #17284B;
+	}
 
 		.wrapper > .inner {
 			max-width: 100%;
