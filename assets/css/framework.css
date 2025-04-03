@@ -77,6 +77,9 @@ body {
     border: 2px solid #3b82f6;
   }
   
+  .card.dimmed {
+    opacity: 0.3;
+  }
   /* === Type-specific Styles === */
   .card.goal {
     background-color: #bbbbbb;
@@ -97,6 +100,11 @@ body {
     color: #ffffff;
   }
   
+  .card.outcome.selected {
+    outline: 2px dashed #6d3875;
+    outline-offset: 2px;
+  }
+
   .card.input {
     background-color: #ed1f52;
     color: #ffffff;
@@ -235,3 +243,42 @@ body {
     color: #999;
   }
   
+  .multi-select-hint {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: #f0f0f0;
+    color: #333;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10000;
+    pointer-events: none;
+    font-family: sans-serif;
+    opacity: 0.95;
+  }
+  
+  .multi-select-hint kbd {
+    font-weight: bold;
+    font-family: monospace;
+    background: #ddd;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin: 0 3px;
+  }
+
+
+  .export-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    background: #8c8d8d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    z-index: 10000;
+  }
