@@ -293,7 +293,7 @@ function App() {
                   ? true
                   : selectedOutcomes.map((o) => o.title).includes(ind.dimension)
               )
-              .filter((ind) => (coreOnly ? ind.type === "core" : true))
+              .filter((ind) => (coreOnly ? ind.type === "Core" : true))
               .map((ind, index) => (
                 <React.Fragment key={index}>
                   <tr>
