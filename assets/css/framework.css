@@ -306,11 +306,101 @@ body {
     flex-direction: column;
     gap: 6px;
   }
+
+
+  .cross-subtitle-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 4px;
+  }
   
-  /* === Tooltip Styling === */
-  .custom-tooltip {
+  .cross-subtitle-column {
+    flex: 1 1 180px;
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+  }
+  
+  .cross-subtitle-header {
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: #444;
+  }
+  
+  .cross-subtitle-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .custom-card {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease;
     position: relative;
-    display: inline-block;
+  }
+  
+  .custom-card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .custom-card.goal {
+    background: #bbbbbb;
+    color: white;
+  }
+  
+  .custom-card.outcome {
+    background: #aa84af;
+    color: #6d3875;
+  }
+  
+  .custom-card.output {
+    background: #ff8aa7;
+    color: white;
+  }
+  
+  .custom-card.input {
+    background: #ed1f52;
+    color: white;
+  }
+  
+  .custom-card.cross {
+    background: #f1f1f1;
+    color: #333;
+  }
+  
+  .custom-card.highlighted {
+    border: 2px solid #3399ff;
+  }
+  
+  .custom-card.selected {
+    outline: 2px solid #ff6600;
+  }
+  
+ /* ========== Tooltip ========== */
+.custom-tooltip {
+    position: relative;
+  }
+  
+  
+  .custom-card:hover .tooltip-box {
+    display: block;
+  }
+  
+  .card-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .input .card-title {
+    font-size: 12px;
+    font-weight: 400;
   }
 
   @media (max-width: 500px) {
@@ -631,3 +721,5 @@ body {
     font-style: italic;
     color: #333;
   }
+
+ 
