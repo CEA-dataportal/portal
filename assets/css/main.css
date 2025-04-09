@@ -55,15 +55,22 @@ a:hover {
 }
 
 /* ======= Bootstrap Button Customization ======= */
-.btn-primary {
-    background-color: #d71920;
-    border-color: #d71920;
-}
 
-.btn-primary:hover {
-    background-color: #a50e15;
-    border-color: #a50e15;
-}
+
+.btn-primary {
+	background-color: #d71920;
+	border-color: #d71920;
+  }
+  
+  .btn-primary:hover {
+	background-color: #a50e15;
+	border-color: #a50e15;
+  }
+  
+  .text-danger {
+	color: #d71920 !important;
+  }
+  
 
 /* ======= Products Section ======= */
 #one {
