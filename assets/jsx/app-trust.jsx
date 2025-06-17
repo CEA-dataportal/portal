@@ -1,69 +1,138 @@
-const { useState, useEffect } = React
+const { useState, useEffect } = React;
+const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n')
-  const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().toLowerCase())
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
 
   return lines.slice(1).map(line => {
-    const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v =>
-      v.replace(/^"|"$/g, '').trim()
-    )
-
-    const item = {}
-
-    headers.forEach((key, index) => {
-      const val = values[index]
-      if (key === 'value') {
-        item.value = parseFloat(val)
-      } else {
-        item[key] = val
-      }
-    })
-
-    return item
-  })
+    const values = line.split(',').map(v => v.replace(/^"|"$/g, '').trim());
+    const item = {};
+    headers.forEach((key, i) => {
+      item[key] = key === 'value' ? parseFloat(values[i]) : values[i];
+    });
+    return item;
+  });
 }
 
-function FullyFilteredMediaDashboard() {
-  const [mediaTrustData, setMediaTrustData] = useState([])
+function EnhancedDashboard() {
+  const [data, setData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('All');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOaHJvkHYWtyNwxgrmvAg7-PfNrzdV07da9wMhjutSpFS28H8m_MMTlXp4ZGLUvs_8mCZFJb4g96jl/pub?gid=0&single=true&output=csv"
-        )
-        const text = await res.text()
-        const data = parseCSV(text)
-        setMediaTrustData(data)
-      } catch (error) {
-        console.error("Failed to fetch CSV data:", error)
-      }
-    }
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSOaHJvkHYWtyNwxgrmvAg7-PfNrzdV07da9wMhjutSpFS28H8m_MMTlXp4ZGLUvs_8mCZFJb4g96jl/pub?gid=0&single=true&output=csv")
+      .then(res => res.text())
+      .then(text => setData(parseCSV(text)))
+      .catch(err => console.error("Fetch error:", err));
+  }, []);
 
-    fetchData()
-  }, [])
+  const countries = ['All', ...new Set(data.map(item => item.country))];
+
+  const filteredData = data.filter(item => {
+    const matchesSearch = Object.values(item).some(val => 
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const matchesCountry = selectedCountry === 'All' || item.country === selectedCountry;
+    return matchesSearch && matchesCountry;
+  });
+
+  const indicatorCountData = data.reduce((acc, item) => {
+    const existing = acc.find(i => i.indicator === item.indicator);
+    if (existing) existing.count += 1;
+    else acc.push({ indicator: item.indicator, count: 1 });
+    return acc;
+  }, []);
+
+  const averageByIndicator = data.reduce((acc, item) => {
+    const existing = acc.find(i => i.indicator === item.indicator);
+    if (existing) {
+      existing.total += item.value;
+      existing.count += 1;
+    } else {
+      acc.push({ indicator: item.indicator, total: item.value, count: 1 });
+    }
+    return acc;
+  }, []).map(item => ({
+    indicator: item.indicator,
+    average: Math.round((item.total / item.count) * 10) / 10
+  }));
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-md max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">Minimal Media Dashboard</h1>
-      {mediaTrustData.length === 0 ? (
-        <p className="text-center text-gray-500">Loading or no data available.</p>
-      ) : (
-        <ul className="space-y-2">
-          {mediaTrustData.slice(0, 10).map((item, index) => (
-            <li key={index} className="border p-4 rounded shadow-sm bg-gray-100">
-              <p><strong>Date:</strong> {item.date}</p>
-              <p><strong>Country:</strong> {item.country}</p>
-              <p><strong>Indicator:</strong> {item.indicator}</p>
-              <p><strong>Value:</strong> {item.value}</p>
-            </li>
+    <div className="max-w-7xl mx-auto py-10 px-4 space-y-10">
+      <h1 className="text-3xl font-bold text-center">Trust in Media Dashboard</h1>
+
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          className="border rounded p-2 w-full md:w-1/2"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="border rounded p-2 w-full md:w-1/2"
+          value={selectedCountry}
+          onChange={(e) => setSelectedCountry(e.target.value)}
+        >
+          {countries.map(c => (
+            <option key={c} value={c}>{c}</option>
           ))}
-        </ul>
-      )}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {averageByIndicator.map((item, i) => (
+          <div key={i} className="p-4 bg-white rounded shadow">
+            <h2 className="text-sm text-gray-500">{item.indicator}</h2>
+            <p className="text-2xl font-bold">{item.average}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white p-4 rounded shadow">
+        <h2 className="text-lg font-semibold mb-2">Countries by Indicator</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={indicatorCountData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="indicator" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="count" fill="#6366f1" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="overflow-auto">
+        <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Org</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Indicator</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Country</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Value</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Variable</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredData.map((item, idx) => (
+              <tr key={idx} className="hover:bg-gray-50">
+                <td className="px-4 py-2 text-sm">{item.date}</td>
+                <td className="px-4 py-2 text-sm">{item.org}</td>
+                <td className="px-4 py-2 text-sm">{item.indicator}</td>
+                <td className="px-4 py-2 text-sm">{item.country}</td>
+                <td className="px-4 py-2 text-sm">{item.value}</td>
+                <td className="px-4 py-2 text-sm">{item.variable}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-  )
+  );
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'))
-root.render(<FullyFilteredMediaDashboard />)
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<EnhancedDashboard />);
