@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 
+type MediaTrustItem = {
+  date: string
+  country: string
+  indicator: string
+  value: number
+}
+
 export default function FullyFilteredMediaDashboard() {
-  const [mediaTrustData, setMediaTrustData] = useState<any[]>([])
+  const [mediaTrustData, setMediaTrustData] = useState<MediaTrustItem[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -9,21 +16,23 @@ export default function FullyFilteredMediaDashboard() {
         const res = await fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSOaHJvkHYWtyNwxgrmvAg7-PfNrzdV07da9wMhjutSpFS28H8m_MMTlXp4ZGLUvs_8mCZFJb4g96jl/pub?gid=0&single=true&output=csv")
         const text = await res.text()
         const rows = text.trim().split('\n')
-        const headers = rows[0].split(',')
+        const headers = rows[0].split(',').map(h => h.trim().toLowerCase())
+
         const data = rows.slice(1).map(row => {
           const values = row.split(',')
-          const entry: any = {}
+          const item: any = {}
           headers.forEach((key, i) => {
-            const trimmedKey = key.trim().toLowerCase()
-            entry[trimmedKey] = trimmedKey === 'value' ? Number(values[i]) : values[i]
+            item[key] = key === 'value' ? Number(values[i]) : values[i]
           })
-          return entry
+          return item as MediaTrustItem
         })
+
         setMediaTrustData(data)
       } catch (error) {
         console.error("Failed to fetch CSV data:", error)
       }
     }
+
     fetchData()
   }, [])
 
