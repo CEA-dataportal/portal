@@ -36,7 +36,7 @@ function EnhancedDashboard() {
     return matchesSearch && matchesCountry;
   });
 
-  const averageByIndicator = data.reduce((acc, item) => {
+  const averageByIndicator = filteredData.reduce((acc, item) => {
     if (isNaN(item.value)) return acc;
     const existing = acc.find(i => i.indicator === item.indicator);
     if (existing) {
@@ -46,10 +46,34 @@ function EnhancedDashboard() {
       acc.push({ indicator: item.indicator, total: item.value, count: 1 });
     }
     return acc;
-  }, []).map(item => ({
-    indicator: item.indicator,
-    average: Math.round((item.total / item.count) * 10) / 10
-  }));
+  }, []).map(item => {
+    const avg = Math.round((item.total / item.count) * 10) / 10;
+
+    const values = filteredData
+      .filter(d => d.indicator === item.indicator && !isNaN(d.value))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const latest = values[0];
+    const previous = values[1];
+
+    let changeLabel = 'no previous data';
+    let changeClass = 'bg-gray-200 text-gray-600';
+
+    if (latest && previous) {
+      const change = Math.round((latest.value - previous.value) * 10) / 10;
+      changeLabel = `${change > 0 ? '+' : ''}${change} from ${previous.date}`;
+      changeClass = change > 0
+        ? 'bg-green-100 text-green-700'
+        : 'bg-red-100 text-red-700';
+    }
+
+    return {
+      indicator: item.indicator,
+      average: avg,
+      changeLabel,
+      changeClass
+    };
+  });
 
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 space-y-10">
@@ -77,8 +101,11 @@ function EnhancedDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {averageByIndicator.map((item, i) => (
           <div key={i} className="p-4 bg-white rounded shadow">
-            <h2 className="text-sm text-gray-500">{item.indicator}</h2>
+            <h2 className="text-sm text-gray-500 mb-1">{item.indicator}</h2>
             <p className="text-2xl font-bold">{item.average}</p>
+            <span className={`text-xs font-medium mt-1 inline-block rounded px-2 py-1 ${item.changeClass}`}>
+              {item.changeLabel}
+            </span>
           </div>
         ))}
       </div>
