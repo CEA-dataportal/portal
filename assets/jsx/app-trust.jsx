@@ -1,5 +1,5 @@
+
 const { useState, useEffect } = React;
-const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
 
 function parseCSV(text) {
   const lines = text.trim().split('\n');
@@ -36,13 +36,6 @@ function EnhancedDashboard() {
     const matchesCountry = selectedCountry === 'All' || item.country === selectedCountry;
     return matchesSearch && matchesCountry;
   });
-
-  const indicatorCountData = data.reduce((acc, item) => {
-    const existing = acc.find(i => i.indicator === item.indicator);
-    if (existing) existing.count += 1;
-    else acc.push({ indicator: item.indicator, count: 1 });
-    return acc;
-  }, []);
 
   const averageByIndicator = data.reduce((acc, item) => {
     const existing = acc.find(i => i.indicator === item.indicator);
@@ -88,20 +81,6 @@ function EnhancedDashboard() {
             <p className="text-2xl font-bold">{item.average}</p>
           </div>
         ))}
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-2">Countries by Indicator</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={indicatorCountData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="indicator" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="count" fill="#6366f1" />
-          </BarChart>
-        </ResponsiveContainer>
       </div>
 
       <div className="overflow-auto">
