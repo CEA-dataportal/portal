@@ -11,8 +11,24 @@ import {
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-const mediaTrustData = [
-  // ... same data as before
+const mediaTrustData = [  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "United States", value: 36, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "Canada", value: 58, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "United Kingdom", value: 42, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "Germany", value: 47, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "France", value: 39, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "Japan", value: 45, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "Australia", value: 53, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "Brazil", value: 32, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "India", value: 61, variable: "Trust" },
+  { date: "2023-01-01", org: "Gallup", indicator: "Trust in Media", country: "South Africa", value: 48, variable: "Trust" },
+  { date: "2022-12-01", org: "Gallup", indicator: "Trust in Media", country: "United States", value: 34, variable: "Trust" },
+  { date: "2022-12-01", org: "Gallup", indicator: "Trust in Media", country: "Canada", value: 56, variable: "Trust" },
+  { date: "2022-12-01", org: "Gallup", indicator: "Trust in Media", country: "United Kingdom", value: 40, variable: "Trust" },
+  { date: "2023-01-01", org: "Pew Research", indicator: "Media Accuracy", country: "United States", value: 44, variable: "Accuracy" },
+  { date: "2023-01-01", org: "Pew Research", indicator: "Media Accuracy", country: "Canada", value: 52, variable: "Accuracy" },
+  { date: "2023-01-01", org: "Pew Research", indicator: "Media Accuracy", country: "Germany", value: 56, variable: "Accuracy" },
+  { date: "2023-01-01", org: "Pew Research", indicator: "Media Accuracy", country: "France", value: 48, variable: "Accuracy" },
+  { date: "2023-01-01", org: "Pew Research", indicator: "Media Accuracy", country: "Japan", value: 62, variable: "Accuracy" },
 ]
 
 const countryToCode = {
