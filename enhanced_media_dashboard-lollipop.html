@@ -52,17 +52,17 @@
       }
     });
 
-    // 2. Compute global average of latest values
+    // 2. Compute global average
     const latestValues = Object.values(latestByCountry).map(d => d.value);
     const globalAvg = latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length;
 
-    // 3. Build differences
+    // 3. Differences per country
     const countryDiffs = Object.entries(latestByCountry).map(([country, { value }]) => ({
       country,
       diff: Math.round((value - globalAvg) * 10) / 10
     }));
 
-    // 4. Sort countries by difference
+    // 4. Sort
     countryDiffs.sort((a, b) => a.diff - b.diff);
 
     const labels = countryDiffs.map(d => d.country);
@@ -78,7 +78,7 @@
           backgroundColor: 'transparent',
           borderColor: '#2563eb',
           borderWidth: 2,
-          barThickness: 4,
+          barThickness: 30,
           datalabels: {
             anchor: 'end',
             align: 'end',
@@ -94,6 +94,7 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: { enabled: true },
@@ -119,15 +120,31 @@
     chartRef.current.chartInstance = chartInstance;
   }, [data]);
 
+  // Estimate width dynamically
+  const countryCount = Object.keys(
+    data.reduce((acc, item) => {
+      if (!isNaN(item.value)) acc[item.country] = true;
+      return acc;
+    }, {})
+  ).length;
+
+  const minWidth = countryCount > 40 ? `${countryCount * 40}px` : '100%';
+
   return (
-  <div className="bg-white rounded shadow p-4 mt-10" style={{ height: '400px' }}>
-    <h2 className="text-xl font-semibold mb-4">
-      Difference from Global Average (Most Recent Value per Country)
-    </h2>
-    <canvas ref={chartRef}></canvas>
-  </div>
-);
+    <div className="bg-white rounded shadow p-4 mt-10" style={{ height: '400px' }}>
+      <h2 className="text-xl font-semibold mb-4">
+        Difference from Global Average (Most Recent Value per Country)
+      </h2>
+      <div className="overflow-x-auto">
+        <div style={{ minWidth }}>
+          <canvas ref={chartRef}></canvas>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+
 
     function EnhancedDashboard() {
       const [data, setData] = useState([]);
