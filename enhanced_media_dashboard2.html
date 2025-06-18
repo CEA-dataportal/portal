@@ -1,4 +1,19 @@
-const { useState, useEffect } = React;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Media Trust Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
 
     function parseCSV(text) {
       const lines = text.trim().split('\n');
@@ -162,3 +177,6 @@ const { useState, useEffect } = React;
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<EnhancedDashboard />);
+  </script>
+</body>
+</html>
