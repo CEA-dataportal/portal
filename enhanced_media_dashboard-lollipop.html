@@ -33,6 +33,21 @@
     function LollipopChart({ data }) {
   const chartRef = useRef(null);
 
+  // Helper to interpolate between orange and blue based on value
+  function interpolateColor(value, max) {
+    const t = Math.max(-1, Math.min(1, value / Math.abs(max)));
+    const ratio = (t + 1) / 2;
+
+    const start = [251, 146, 60];   // orange
+    const end = [37, 99, 235];      // blue
+
+    const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
+    const g = Math.round(start[1] + (end[1] - start[1]) * ratio);
+    const b = Math.round(start[2] + (end[2] - start[2]) * ratio);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   useEffect(() => {
     if (!data.length) return;
 
@@ -41,7 +56,7 @@
       chartRef.current.chartInstance.destroy();
     }
 
-    // 1. Get most recent value per country
+    // Most recent value per country
     const latestByCountry = {};
     data.forEach(item => {
       if (isNaN(item.value)) return;
@@ -52,22 +67,25 @@
       }
     });
 
-    // 2. Compute global average
+    // Global average of latest values
     const latestValues = Object.values(latestByCountry).map(d => d.value);
     const globalAvg = latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length;
 
-    // 3. Differences per country
+    // Differences per country
     const countryDiffs = Object.entries(latestByCountry).map(([country, { value }]) => ({
       country,
       diff: Math.round((value - globalAvg) * 10) / 10
     }));
 
-    // 4. Sort
+    // Sort countries by difference
     countryDiffs.sort((a, b) => a.diff - b.diff);
 
     const labels = countryDiffs.map(d => d.country);
     const diffs = countryDiffs.map(d => d.diff);
+    const maxDiff = Math.max(...diffs);
+    const minDiff = Math.min(...diffs);
 
+    // Chart instance
     const chartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -75,34 +93,31 @@
         datasets: [{
           label: 'Difference from Global Average',
           data: diffs,
-          backgroundColor: 'transparent',
-          borderColor: '#2563eb',
           borderWidth: 2,
+          backgroundColor: 'transparent',
+          borderColor: diffs.map(value =>
+            value >= 0 ? interpolateColor(value, maxDiff) : interpolateColor(value, minDiff)
+          ),
           barThickness: 30,
-          datasets: [{
-  label: 'Difference from Global Average',
-  data: diffs,
-  backgroundColor: 'transparent',
-  borderColor: '#2563eb',
-  borderWidth: 2,
-  barThickness: 30,
-  datalabels: {
-    anchor: function(context) {
-      return context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start';
-    },
-    align: function(context) {
-      return context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start';
-    },
-    backgroundColor: '#2563eb',
-    borderRadius: 20,
-    color: '#fff',
-    padding: 6,
-    font: {
-      weight: 'bold'
-    },
-    formatter: value => value
-  }
-}]
+          datalabels: {
+            anchor: function(ctx) {
+              return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start';
+            },
+            align: function(ctx) {
+              return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start';
+            },
+            backgroundColor: function(ctx) {
+              const value = ctx.dataset.data[ctx.dataIndex];
+              return value >= 0 ? interpolateColor(value, maxDiff) : interpolateColor(value, minDiff);
+            },
+            borderRadius: 999,
+            color: '#fff',
+            padding: 6,
+            font: {
+              weight: 'bold'
+            },
+            formatter: value => value
+          }
         }]
       },
       options: {
@@ -133,13 +148,14 @@
     chartRef.current.chartInstance = chartInstance;
   }, [data]);
 
-  // Estimate width
+  // Calculate responsive width based on country count
   const countryCount = Object.keys(
     data.reduce((acc, item) => {
       if (!isNaN(item.value)) acc[item.country] = true;
       return acc;
     }, {})
   ).length;
+
   const minWidth = countryCount > 40 ? `${countryCount * 40}px` : '100%';
 
   return (
