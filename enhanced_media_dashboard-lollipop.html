@@ -31,85 +31,105 @@
     }
 
     function LollipopChart({ data }) {
-      const chartRef = useRef(null);
+          const chartRef = useRef(null);
 
-      useEffect(() => {
-        if (!data.length) return;
+          useEffect(() => {
+            if (!data.length) return;
 
-        const ctx = chartRef.current.getContext('2d');
-        if (chartRef.current.chartInstance) {
-          chartRef.current.chartInstance.destroy();
+            const ctx = chartRef.current.getContext('2d');
+            if (chartRef.current.chartInstance) {
+              chartRef.current.chartInstance.destroy();
+            }
+
+            // 1. Get most recent value per country
+            const latestByCountry = {};
+            data.forEach(item => {
+              if (isNaN(item.value)) return;
+              const country = item.country;
+              const date = new Date(item.date);
+              if (!latestByCountry[country] || new Date(latestByCountry[country].date) < date) {
+                latestByCountry[country] = { value: item.value, date };
+              }
+            });
+
+            // 2. Compute global average of latest values
+            const latestValues = Object.values(latestByCountry).map(d => d.value);
+            const globalAvg = latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length;
+
+            // 3. Build differences
+            const countryDiffs = Object.entries(latestByCountry).map(([country, { value }]) => ({
+              country,
+              diff: Math.round((value - globalAvg) * 10) / 10 // rounded to 1 decimal
+            }));
+
+            // 4. Sort countries by difference
+            countryDiffs.sort((a, b) => a.diff - b.diff);
+
+            const labels = countryDiffs.map(d => d.country);
+            const diffs = countryDiffs.map(d => d.diff);
+
+            const chartInstance = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels,
+                datasets: [{
+                  label: 'Difference from Global Average',
+                  data: diffs,
+                  backgroundColor: 'transparent',
+                  borderColor: '#2563eb',
+                  borderWidth: 2,
+                  barThickness: 4,
+                  datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    backgroundColor: '#2563eb',
+                    borderRadius: 20,
+                    color: '#fff',
+                    padding: 6,
+                    font: {
+                      weight: 'bold'
+                    }
+                  }
+                }]
+              },
+              options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { enabled: true },
+                  datalabels: {}
+                },
+                scales: {
+                  x: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Difference from Global Average'
+                    }
+                  },
+                  y: {
+                    ticks: { autoSkip: false },
+                    grid: { drawBorder: false }
+                  }
+                }
+              },
+              plugins: [ChartDataLabels]
+            });
+
+            chartRef.current.chartInstance = chartInstance;
+          }, [data]);
+
+          return (
+            <div className="bg-white rounded shadow p-4 mt-10">
+              <h2 className="text-xl font-semibold mb-4">
+                Difference from Global Average (Most Recent Value per Country)
+              </h2>
+              <canvas ref={chartRef} height="800"></canvas>
+            </div>
+          );
         }
 
-        const countryData = {};
-        data.forEach(item => {
-          if (isNaN(item.value)) return;
-          if (!countryData[item.country]) {
-            countryData[item.country] = { total: 0, count: 0 };
-          }
-          countryData[item.country].total += item.value;
-          countryData[item.country].count += 1;
-        });
-
-        const labels = Object.keys(countryData);
-        const values = labels.map(country => {
-          const { total, count } = countryData[country];
-          return Math.round((total / count) * 10) / 10;
-        });
-
-        const chartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Average Trust',
-              data: values,
-              backgroundColor: 'transparent',
-              borderColor: '#2563eb',
-              borderWidth: 2,
-              barThickness: 4,
-              datalabels: {
-                anchor: 'end',
-                align: 'end',
-                backgroundColor: '#2563eb',
-                borderRadius: 20,
-                color: '#fff',
-                padding: 6,
-                font: {
-                  weight: 'bold'
-                }
-              }
-            }]
-          },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            plugins: {
-              legend: { display: false },
-              tooltip: { enabled: true },
-              datalabels: {}
-            },
-            scales: {
-              x: { beginAtZero: true },
-              y: {
-                ticks: { autoSkip: false },
-                grid: { drawBorder: false }
-              }
-            }
-          },
-          plugins: [ChartDataLabels]
-        });
-
-        chartRef.current.chartInstance = chartInstance;
-      }, [data]);
-
-      return (
-        <div className="bg-white rounded shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Lollipop Chart: Avg Trust by Country</h2>
-          <canvas ref={chartRef} height="800"></canvas>
-        </div>
-      );
-    }
 
     function EnhancedDashboard() {
       const [data, setData] = useState([]);
@@ -248,7 +268,7 @@
               </table>
             </div>
           )}
-          
+
         </div>
       );
     }
