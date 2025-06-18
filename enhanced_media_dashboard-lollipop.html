@@ -78,7 +78,7 @@
           backgroundColor: 'transparent',
           borderColor: '#2563eb',
           borderWidth: 2,
-          barThickness: 10,
+          barThickness: 30,
           datalabels: {
             anchor: 'end',
             align: 'end',
@@ -120,24 +120,23 @@
     chartRef.current.chartInstance = chartInstance;
   }, [data]);
 
-  // Estimate width dynamically
+  // Estimate width
   const countryCount = Object.keys(
     data.reduce((acc, item) => {
       if (!isNaN(item.value)) acc[item.country] = true;
       return acc;
     }, {})
   ).length;
-
   const minWidth = countryCount > 40 ? `${countryCount * 40}px` : '100%';
 
   return (
-    <div className="bg-white rounded shadow p-4 mt-10" style={{ height: '400px' }}>
+    <div className="bg-white rounded shadow p-4 mt-10">
       <h2 className="text-xl font-semibold mb-4">
         Difference from Global Average (Most Recent Value per Country)
       </h2>
       <div className="overflow-x-auto">
-        <div style={{ minWidth }}>
-          <canvas ref={chartRef}></canvas>
+        <div style={{ minWidth, height: '400px' }}>
+          <canvas ref={chartRef} style={{ width: '100%', height: '100%' }}></canvas>
         </div>
       </div>
     </div>
