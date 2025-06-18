@@ -120,13 +120,13 @@
   }, [data]);
 
   return (
-    <div className="bg-white rounded shadow p-4 mt-10">
-      <h2 className="text-xl font-semibold mb-4">
-        Difference from Global Average (Most Recent Value per Country)
-      </h2>
-      <canvas ref={chartRef} height="500"></canvas>
-    </div>
-  );
+  <div className="bg-white rounded shadow p-4 mt-10" style={{ height: '400px' }}>
+    <h2 className="text-xl font-semibold mb-4">
+      Difference from Global Average (Most Recent Value per Country)
+    </h2>
+    <canvas ref={chartRef}></canvas>
+  </div>
+);
 }
 
     function EnhancedDashboard() {
