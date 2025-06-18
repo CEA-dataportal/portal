@@ -83,12 +83,12 @@
             datasets: [{
               label: 'Difference from Global Average',
               data: diffs,
-              backgroundColor: 'transparent',
-              borderColor: diffs.map(value =>
+              borderColor: 'transparent',
+              backgroundColor: diffs.map(value =>
                 value >= 0 ? interpolateColor(value, maxDiff) : interpolateColor(value, minDiff)
               ),
-              borderWidth: 2,
-              barThickness: 30,
+              borderWidth: 0,
+              barThickness: 10,
               datalabels: {
                 anchor: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
                 align: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
