@@ -79,19 +79,30 @@
           borderColor: '#2563eb',
           borderWidth: 2,
           barThickness: 30,
-          datalabels: {
-                      align: function(context) {
-                        return context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start';
-                      },
-                      anchor: 'end',
-                      backgroundColor: '#2563eb',
-                      borderRadius: 20,
-                      color: '#fff',
-                      padding: 6,
-                      font: {
-                        weight: 'bold'
-                      }
-                    }
+          datasets: [{
+  label: 'Difference from Global Average',
+  data: diffs,
+  backgroundColor: 'transparent',
+  borderColor: '#2563eb',
+  borderWidth: 2,
+  barThickness: 30,
+  datalabels: {
+    anchor: function(context) {
+      return context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start';
+    },
+    align: function(context) {
+      return context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start';
+    },
+    backgroundColor: '#2563eb',
+    borderRadius: 20,
+    color: '#fff',
+    padding: 6,
+    font: {
+      weight: 'bold'
+    },
+    formatter: value => value
+  }
+}]
         }]
       },
       options: {
