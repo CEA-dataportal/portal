@@ -1,9 +1,8 @@
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
   return lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.replace(/^"|"$/g, '').trim());
     const item = {};
@@ -14,10 +13,199 @@ function parseCSV(text) {
   });
 }
 
+function interpolateColor(value, max) {
+  const t = Math.max(-1, Math.min(1, value / Math.abs(max)));
+  const ratio = (t + 1) / 2;
+  const start = [251, 146, 60];   // orange
+  const end = [37, 99, 235];      // blue
+  const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
+  const g = Math.round(start[1] + (end[1] - start[1]) * ratio);
+  const b = Math.round(start[2] + (end[2] - start[2]) * ratio);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function MiniTrendChart({ data, indicator }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const ctx = canvasRef.current.getContext('2d');
+    const filtered = data.filter(item => item.indicator === indicator && !isNaN(item.value));
+    const grouped = {};
+    filtered.forEach(d => {
+      const date = d.date;
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(d.value);
+    });
+    const dateAvgs = Object.entries(grouped)
+      .map(([date, values]) => ({ date, avg: values.reduce((a, b) => a + b, 0) / values.length }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const labels = dateAvgs.map(d => d.date);
+    const values = dateAvgs.map(d => Math.round(d.avg * 10) / 10);
+    if (canvasRef.current.chartInstance) {
+      canvasRef.current.chartInstance.destroy();
+    }
+    const chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Avg Value',
+          data: values,
+          fill: false,
+          borderColor: '#3b82f6',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: ctx => `Avg: ${ctx.parsed.y}`
+            }
+          },
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            ticks: { maxTicksLimit: 6 },
+            grid: { display: false }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { display: false }
+          }
+        }
+      }
+    });
+    canvasRef.current.chartInstance = chartInstance;
+  }, [data, indicator]);
+
+  return (
+    <div className="h-24 w-full">
+      <canvas ref={canvasRef}></canvas>
+    </div>
+  );
+}
+
+
+function LollipopChart({ data }) {
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (!data.length) return;
+
+    const ctx = chartRef.current.getContext('2d');
+    if (chartRef.current.chartInstance) {
+      chartRef.current.chartInstance.destroy();
+    }
+
+    const latestByCountry = {};
+    data.forEach(item => {
+      if (isNaN(item.value)) return;
+      const country = item.country;
+      const date = new Date(item.date);
+      if (!latestByCountry[country] || new Date(latestByCountry[country].date) < date) {
+        latestByCountry[country] = { value: item.value, date };
+      }
+    });
+
+    const latestValues = Object.values(latestByCountry).map(d => d.value);
+    const globalAvg = latestValues.reduce((sum, val) => sum + val, 0) / latestValues.length;
+
+    const countryDiffs = Object.entries(latestByCountry).map(([country, { value }]) => ({
+      country,
+      diff: Math.round((value - globalAvg) * 10) / 10
+    }));
+
+    countryDiffs.sort((a, b) => a.diff - b.diff);
+    const labels = countryDiffs.map(d => d.country);
+    const diffs = countryDiffs.map(d => d.diff);
+    const maxDiff = Math.max(...diffs);
+    const minDiff = Math.min(...diffs);
+
+    const chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Difference from Global Average',
+          data: diffs,
+          borderColor: 'transparent',
+          backgroundColor: diffs.map(value =>
+            value >= 0 ? interpolateColor(value, maxDiff) : interpolateColor(value, minDiff)
+          ),
+          borderWidth: 0,
+          barThickness: 10,
+          datalabels: {
+            anchor: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
+            align: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
+            backgroundColor: ctx => {
+              const value = ctx.dataset.data[ctx.dataIndex];
+              return value >= 0 ? interpolateColor(value, maxDiff) : interpolateColor(value, minDiff);
+            },
+            borderRadius: 999,
+            color: '#fff',
+            padding: 6,
+            font: { weight: 'bold' },
+            formatter: value => value
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true },
+          datalabels: {}
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Difference from Global Average'
+            }
+          },
+          x: {
+            ticks: { autoSkip: false, maxRotation: 90, minRotation: 45 },
+            grid: { drawBorder: false }
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+
+    chartRef.current.chartInstance = chartInstance;
+  }, [data]);
+
+  const countryCount = [...new Set(data.map(d => d.country))].length;
+  const minWidth = countryCount > 40 ? `${countryCount * 40}px` : '100%';
+
+  return (
+    <div className="bg-white rounded shadow p-4 mt-10">
+      <h2 className="text-xl font-semibold mb-4">
+        Difference from Global Average (Most Recent Value per Country)
+      </h2>
+      <div className="overflow-x-auto">
+        <div style={{ minWidth, height: '400px' }}>
+          <canvas ref={chartRef} style={{ width: '100%', height: '100%' }}></canvas>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EnhancedDashboard() {
   const [data, setData] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState('All');
+  const [selectedRegion, setSelectedRegion] = useState('All');
+  const [selectedIndicator, setSelectedIndicator] = useState('All');
+  const [activeTab, setActiveTab] = useState('home');
 
   useEffect(() => {
     fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSOaHJvkHYWtyNwxgrmvAg7-PfNrzdV07da9wMhjutSpFS28H8m_MMTlXp4ZGLUvs_8mCZFJb4g96jl/pub?gid=0&single=true&output=csv")
@@ -26,14 +214,13 @@ function EnhancedDashboard() {
       .catch(err => console.error("Fetch error:", err));
   }, []);
 
-  const countries = ['All', ...new Set(data.map(item => item.country))];
+  const regions = ['All', ...new Set(data.map(item => item.region).filter(Boolean))];
+  const indicators = ['All', ...new Set(data.map(item => item.indicator).filter(Boolean))];
 
   const filteredData = data.filter(item => {
-    const matchesSearch = Object.values(item).some(val => 
-      String(val).toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    const matchesCountry = selectedCountry === 'All' || item.country === selectedCountry;
-    return matchesSearch && matchesCountry;
+    const matchesRegion = selectedRegion === 'All' || item.region === selectedRegion;
+    const matchesIndicator = selectedIndicator === 'All' || item.indicator === selectedIndicator;
+    return matchesRegion && matchesIndicator;
   });
 
   const averageByIndicator = filteredData.reduce((acc, item) => {
@@ -48,25 +235,16 @@ function EnhancedDashboard() {
     return acc;
   }, []).map(item => {
     const avg = Math.round((item.total / item.count) * 10) / 10;
-
-    const values = filteredData
-      .filter(d => d.indicator === item.indicator && !isNaN(d.value))
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-
+    const values = filteredData.filter(d => d.indicator === item.indicator && !isNaN(d.value)).sort((a, b) => new Date(b.date) - new Date(a.date));
     const latest = values[0];
     const previous = values[1];
-
     let changeLabel = 'no previous data';
     let changeClass = 'bg-gray-200 text-gray-600';
-
     if (latest && previous) {
       const change = Math.round((latest.value - previous.value) * 10) / 10;
       changeLabel = `${change > 0 ? '+' : ''}${change} from ${previous.date}`;
-      changeClass = change > 0
-        ? 'bg-green-100 text-green-700'
-        : 'bg-red-100 text-red-700';
+      changeClass = change > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
     }
-
     return {
       indicator: item.indicator,
       average: avg,
@@ -76,68 +254,101 @@ function EnhancedDashboard() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 space-y-10">
-      <h1 className="text-3xl font-bold text-center">Trust in Media Dashboard</h1>
+    <div className="max-w-7xl mx-auto py-10 px-4 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-center">
+        <h1 className="text-3xl font-bold text-center md:text-left">Trust in Media Dashboard</h1>
+        <div className="flex gap-2 mt-4 md:mt-0">
+          {['home', 'dataset', 'other'].map(tab => (
+            <button
+              key={tab}
+              className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-col md:flex-row gap-4">
-        <input
-          type="text"
-          className="border rounded p-2 w-full md:w-1/2"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
         <select
           className="border rounded p-2 w-full md:w-1/2"
-          value={selectedCountry}
-          onChange={(e) => setSelectedCountry(e.target.value)}
+          value={selectedIndicator}
+          onChange={(e) => setSelectedIndicator(e.target.value)}
         >
-          {countries.map(c => (
-            <option key={c} value={c}>{c}</option>
+          {indicators.map(indicator => (
+            <option key={indicator} value={indicator}>{indicator}</option>
+          ))}
+        </select>
+
+        <select
+          className="border rounded p-2 w-full md:w-1/2"
+          value={selectedRegion}
+          onChange={(e) => setSelectedRegion(e.target.value)}
+        >
+          {regions.map(region => (
+            <option key={region} value={region}>{region}</option>
           ))}
         </select>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {averageByIndicator.map((item, i) => (
-          <div key={i} className="p-4 bg-white rounded shadow">
-            <h2 className="text-sm text-gray-500 mb-1">{item.indicator}</h2>
-            <p className="text-2xl font-bold">{item.average}</p>
-            <span className={`text-xs font-medium mt-1 inline-block rounded px-2 py-1 ${item.changeClass}`}>
-              {item.changeLabel}
-            </span>
-          </div>
-        ))}
-      </div>
+      {activeTab === 'home' && (
+        <>
+          <div className="grid grid-cols-1 gap-6">
+          {averageByIndicator.map((item, i) => (
+            <div key={i} className="p-4 bg-white rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <h2 className="text-sm text-gray-500 mb-1">{item.indicator}</h2>
+                <p className="text-2xl font-bold">{item.average}</p>
+                <span className={`text-xs font-medium mt-1 inline-block rounded px-2 py-1 ${item.changeClass}`}>
+                  {item.changeLabel}
+                </span>
+              </div>
+              <div className="flex-1">
+                <MiniTrendChart data={filteredData} indicator={item.indicator} />
+              </div>
+            </div>
+          ))}
+        </div>
+          <LollipopChart data={filteredData} />
+        </>
+      )}
 
-      <div className="overflow-auto">
-        <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Org</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Indicator</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Country</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Value</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Variable</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredData.map((item, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-sm">{item.date}</td>
-                <td className="px-4 py-2 text-sm">{item.org}</td>
-                <td className="px-4 py-2 text-sm">{item.indicator}</td>
-                <td className="px-4 py-2 text-sm">{item.country}</td>
-                <td className="px-4 py-2 text-sm">{isNaN(item.value) ? 'N/A' : item.value}</td>
-                <td className="px-4 py-2 text-sm">{item.variable}</td>
+      {activeTab === 'dataset' && (
+        <div className="overflow-auto">
+          <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Org</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Indicator</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Country</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Value</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Variable</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Region</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredData.map((item, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 text-sm">{item.date}</td>
+                  <td className="px-4 py-2 text-sm">{item.org}</td>
+                  <td className="px-4 py-2 text-sm">{item.indicator}</td>
+                  <td className="px-4 py-2 text-sm">{item.country}</td>
+                  <td className="px-4 py-2 text-sm">{isNaN(item.value) ? 'N/A' : item.value}</td>
+                  <td className="px-4 py-2 text-sm">{item.variable}</td>
+                  <td className="px-4 py-2 text-sm">{item.region}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'other' && <LollipopChart data={filteredData} />}
     </div>
   );
 }
 
-ReactDOM.render(<EnhancedDashboard />, document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<EnhancedDashboard />);
